@@ -1,0 +1,72 @@
+commit 21193f747eedb5d260b52c092a5111de42fbab26
+Author: b <a@b>
+Date:   Tue Oct 6 10:50:00 2026 -0700
+
+    TEST-0010: test checkout with test doubles
+    
+    The tests hand checkout() stand-ins for CoastPay, so nobody is charged:
+    
+    - approving and declining always give the same answer, so each test
+      picks the outcome it needs.
+    - recording remembers every amount it's asked to charge, so a test can
+      check that checkout() charged the price of the offering, in cents.
+    
+    All three keep PaymentProcessor's contract: they return true or false,
+    and never throw.
+    
+    The expected amount comes from the real priceFor(). It's fast, gives
+    the same answer every time, and has no side effects, so there's no
+    reason to replace it.
+
+diff --git a/test/payment.spec.ts b/test/payment.spec.ts
+index 48ea438..4b3695f 100644
+--- a/test/payment.spec.ts
++++ b/test/payment.spec.ts
+@@ -1,4 +1,45 @@
+ import { expect } from "chai";
+-import { checkout } from "../src/payment";
++import { checkout, PaymentProcessor } from "../src/payment";
++import { findCustomer, findOffering } from "../src/catalogue";
+ 
+-describe("checkout", () => {});
++// stand-ins for CoastPay: each always gives the same answer
++const approving: PaymentProcessor = { charge: () => true };
++const declining: PaymentProcessor = { charge: () => false };
++
++describe("checkout", () => {
++	it("registers the customer when the card is charged", () => {
++		const offering = findOffering("FT-110-B")!;
++		const customer = findCustomer("c11")!;
++
++		checkout(offering, customer, approving);
++
++		expect(offering.isRegistered(customer)).to.equal(true);
++	});
++
++	it("does not register the customer when the card is declined", () => {
++		const offering = findOffering("FT-110-B")!;
++		const customer = findCustomer("c12")!;
++
++		checkout(offering, customer, declining);
++
++		expect(offering.isRegistered(customer)).to.equal(false);
++	});
++
++	it("charges the price of the offering, in cents", () => {
++		const offering = findOffering("FT-110-B")!;
++		const customer = findCustomer("c13")!;
++		// remembers every amount it's asked to charge, and approves
++		const charged: number[] = [];
++		const recording: PaymentProcessor = {
++			charge: (cents) => {
++				charged.push(cents);
++				return true;
++			},
++		};
++
++		checkout(offering, customer, recording);
++
++		// priceFor(offering, customer) is $117.81 for a resident adult
++		expect(charged).to.deep.equal([11781]);
++	});
++});
