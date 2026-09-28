@@ -19,11 +19,11 @@
 		"typescript": "5.9.2"
 	},
 	"scripts": {
-		"cover": "cd \"$INIT_CWD\" && nyc --reporter text --reporter html mocha",
+		"cover": "node scripts/run.mjs nyc --cwd . --reporter text --reporter html mocha",
 		"build": "node scripts/typecheck.mjs && yarn prettier:check",
-		"test": "cd \"$INIT_CWD\" && mocha",
-		"prettier:check": "cd \"$INIT_CWD\" && prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
-		"prettier:fix": "cd \"$INIT_CWD\" && prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-		"start": "cd \"$INIT_CWD\" && ts-node src/main.ts"
+		"test": "node scripts/run.mjs mocha",
+		"prettier:check": "node scripts/run.mjs prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
+		"prettier:fix": "node scripts/run.mjs prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+		"start": "node scripts/run.mjs ts-node src/main.ts"
 	}
 }
