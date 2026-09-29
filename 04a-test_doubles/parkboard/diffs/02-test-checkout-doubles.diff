@@ -1,4 +1,4 @@
-commit 21193f747eedb5d260b52c092a5111de42fbab26
+commit 491eceea697ff5995c6df93e3c2c3a52fb4d7a4d
 Author: b <a@b>
 Date:   Tue Oct 6 10:50:00 2026 -0700
 
@@ -19,7 +19,7 @@ Date:   Tue Oct 6 10:50:00 2026 -0700
     reason to replace it.
 
 diff --git a/test/payment.spec.ts b/test/payment.spec.ts
-index 48ea438..4b3695f 100644
+index 48ea438..49316b7 100644
 --- a/test/payment.spec.ts
 +++ b/test/payment.spec.ts
 @@ -1,4 +1,45 @@
@@ -30,8 +30,8 @@ index 48ea438..4b3695f 100644
  
 -describe("checkout", () => {});
 +// stand-ins for CoastPay: each always gives the same answer
-+const approving: PaymentProcessor = { charge: () => true };
-+const declining: PaymentProcessor = { charge: () => false };
++const approving: PaymentProcessor = { charge: (cents: number) => true };
++const declining: PaymentProcessor = { charge: (cents: number) => false };
 +
 +describe("checkout", () => {
 +	it("registers the customer when the card is charged", () => {
@@ -58,7 +58,7 @@ index 48ea438..4b3695f 100644
 +		// remembers every amount it's asked to charge, and approves
 +		const charged: number[] = [];
 +		const recording: PaymentProcessor = {
-+			charge: (cents) => {
++			charge: (cents: number) => {
 +				charged.push(cents);
 +				return true;
 +			},

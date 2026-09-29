@@ -1,0 +1,43 @@
+commit 71658696f5d2c522e6aab2059c841668c2567e01
+Author: b <a@b>
+Date:   Tue Oct 6 10:25:00 2026 -0700
+
+    Check what buyCoffee asked the bank to charge
+    
+    The doubles let a test choose what the bank says, but not see what
+    buyCoffee() asked it to charge. Change 450 to 45 in buyCoffee() and
+    every test still passes: approving and declining ignore the amount.
+    
+    Returning the amount from buyCoffee() wouldn't help. buyCoffee() could
+    return 450 and still ask the bank for 45. What matters is what actually
+    reached the card reader, and only something standing in for the reader
+    can see that.
+    
+    Adds recording, a double that remembers every amount it's asked to
+    charge, and approves. The new test hands it to buyCoffee(), then checks
+    what it remembered.
+
+diff --git a/test/cart.spec.ts b/test/cart.spec.ts
+index 9af5036..33ac787 100644
+--- a/test/cart.spec.ts
++++ b/test/cart.spec.ts
+@@ -13,4 +13,19 @@ describe("buyCoffee", () => {
+ 	it("refuses when the card is declined", () => {
+ 		expect(buyCoffee(declining)).to.equal("card declined");
+ 	});
++
++	it("charges 450 cents", () => {
++		// remembers every amount it's asked to charge, and approves
++		const charged: number[] = [];
++		const recording: CardReader = {
++			charge: (cents: number) => {
++				charged.push(cents);
++				return true;
++			},
++		};
++
++		buyCoffee(recording);
++
++		expect(charged).to.deep.equal([450]);
++	});
+ });

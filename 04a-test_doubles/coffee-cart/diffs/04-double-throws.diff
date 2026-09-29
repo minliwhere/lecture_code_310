@@ -1,0 +1,30 @@
+commit ba02170a8ebf4841bca3acfea2ceec222af32ed3
+Author: b <a@b>
+Date:   Tue Oct 6 10:28:00 2026 -0700
+
+    Make the declining double throw
+    
+    A teammate changes declining to throw instead of returning false: their
+    last card library reported a declined card with an exception.
+    
+    It compiles, but the declined test now fails: an exception comes out of
+    charge() and escapes buyCoffee(). Before changing anything, work out
+    which side is wrong: buyCoffee(), or the double?
+
+diff --git a/test/cart.spec.ts b/test/cart.spec.ts
+index 33ac787..347e2b7 100644
+--- a/test/cart.spec.ts
++++ b/test/cart.spec.ts
+@@ -3,7 +3,11 @@ import { buyCoffee, CardReader } from "../src/cart";
+ 
+ // stand-ins for the bank: each always gives the same answer
+ const approving: CardReader = { charge: (cents: number) => true };
+-const declining: CardReader = { charge: (cents: number) => false };
++const declining: CardReader = {
++	charge: (cents: number) => {
++		throw new Error("card declined");
++	},
++};
+ 
+ describe("buyCoffee", () => {
+ 	it("serves coffee when the card is charged", () => {

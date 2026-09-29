@@ -1,4 +1,4 @@
-commit 95be0581e52e77e593220388f1c291be768feca8
+commit 17b438c899b771dfc6ac5e4b0a655620a5b7450a
 Author: b <a@b>
 Date:   Tue Oct 6 10:20:00 2026 -0700
 
@@ -17,10 +17,7 @@ Date:   Tue Oct 6 10:20:00 2026 -0700
     
     The tests hand buyCoffee() stand-ins for the bank, test doubles that
     always give the same answer, so each test picks the outcome it needs.
-    
-    The declined test fails: an exception comes out of charge() and escapes
-    buyCoffee(). Before changing anything, work out which side is wrong:
-    buyCoffee(), or the double?
+    Both tests pass every run.
 
 diff --git a/src/bank.ts b/src/bank.ts
 index 42112ff..d3bc72d 100644
@@ -65,21 +62,17 @@ index 397752d..1cedb7f 100644
 -console.log(buyCoffee(new BankCardReader().charge(450)));
 +console.log(buyCoffee(new BankCardReader()));
 diff --git a/test/cart.spec.ts b/test/cart.spec.ts
-index 899adc0..6965c37 100644
+index 899adc0..9af5036 100644
 --- a/test/cart.spec.ts
 +++ b/test/cart.spec.ts
-@@ -1,12 +1,20 @@
+@@ -1,12 +1,16 @@
  import { expect } from "chai";
 -import { buyCoffee } from "../src/cart";
 +import { buyCoffee, CardReader } from "../src/cart";
 +
 +// stand-ins for the bank: each always gives the same answer
-+const approving: CardReader = { charge: () => true };
-+const declining: CardReader = {
-+	charge: () => {
-+		throw new Error("card declined");
-+	},
-+};
++const approving: CardReader = { charge: (cents: number) => true };
++const declining: CardReader = { charge: (cents: number) => false };
  
  describe("buyCoffee", () => {
  	it("serves coffee when the card is charged", () => {

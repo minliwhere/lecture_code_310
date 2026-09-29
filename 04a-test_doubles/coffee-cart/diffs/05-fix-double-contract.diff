@@ -1,4 +1,4 @@
-commit b2dffd2bde9543b5395531d8139f93eab9d70393
+commit 7c08fd6d620d35814ab65fdd4d4663967de46049
 Author: b <a@b>
 Date:   Tue Oct 6 10:30:00 2026 -0700
 
@@ -20,19 +20,19 @@ Date:   Tue Oct 6 10:30:00 2026 -0700
     reach the customer as "card declined".
 
 diff --git a/test/cart.spec.ts b/test/cart.spec.ts
-index 6965c37..8b76e80 100644
+index 347e2b7..33ac787 100644
 --- a/test/cart.spec.ts
 +++ b/test/cart.spec.ts
 @@ -3,11 +3,7 @@ import { buyCoffee, CardReader } from "../src/cart";
  
  // stand-ins for the bank: each always gives the same answer
- const approving: CardReader = { charge: () => true };
+ const approving: CardReader = { charge: (cents: number) => true };
 -const declining: CardReader = {
--	charge: () => {
+-	charge: (cents: number) => {
 -		throw new Error("card declined");
 -	},
 -};
-+const declining: CardReader = { charge: () => false };
++const declining: CardReader = { charge: (cents: number) => false };
  
  describe("buyCoffee", () => {
  	it("serves coffee when the card is charged", () => {
