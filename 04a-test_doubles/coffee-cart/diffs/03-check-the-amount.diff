@@ -1,43 +1,55 @@
-commit 71658696f5d2c522e6aab2059c841668c2567e01
+commit a1066c44ee8be2a9180f23a2adf1117d6f8fa52d
 Author: b <a@b>
 Date:   Tue Oct 6 10:25:00 2026 -0700
 
     Check what buyCoffee asked the bank to charge
     
     The doubles let a test choose what the bank says, but not see what
-    buyCoffee() asked it to charge. Change 450 to 45 in buyCoffee() and
-    every test still passes: approving and declining ignore the amount.
+    buyCoffee() asked it to charge. Change buyCoffee() to call getPrice()
+    without passing the modification, and every test still passes:
+    ApprovingReader and DecliningReader ignore the amount, and getPrice()'s own tests
+    don't notice that buyCoffee() stopped calling it.
     
     Returning the amount from buyCoffee() wouldn't help. buyCoffee() could
-    return 450 and still ask the bank for 45. What matters is what actually
+    return 500 and still ask the bank for 450. What matters is what actually
     reached the card reader, and only something standing in for the reader
     can see that.
     
-    Adds recording, a double that remembers every amount it's asked to
-    charge, and approves. The new test hands it to buyCoffee(), then checks
-    what it remembered.
+    Adds RecordingReader, a double that remembers every amount it's asked
+    to charge, and approves. The new test hands one to buyCoffee(), then
+    checks what it remembered.
 
 diff --git a/test/cart.spec.ts b/test/cart.spec.ts
-index 9af5036..33ac787 100644
+index 20d1778..b908203 100644
 --- a/test/cart.spec.ts
 +++ b/test/cart.spec.ts
-@@ -13,4 +13,19 @@ describe("buyCoffee", () => {
+@@ -15,6 +15,16 @@ class DecliningReader implements IReader {
+ 	}
+ }
+ 
++// remembers every amount it's asked to charge, and approves
++class RecordingReader implements IReader {
++	public charged: number[] = [];
++
++	public charge(cents: number): boolean {
++		this.charged.push(cents);
++		return true;
++	}
++}
++
+ describe("getPrice", () => {
+ 	it("adds $1 for decaf", () => {
+ 		expect(getPrice("decaf")).to.equal(550);
+@@ -37,4 +47,12 @@ describe("buyCoffee", () => {
  	it("refuses when the card is declined", () => {
- 		expect(buyCoffee(declining)).to.equal("card declined");
+ 		expect(buyCoffee(new DecliningReader(), "decaf")).to.equal("card declined");
  	});
 +
-+	it("charges 450 cents", () => {
-+		// remembers every amount it's asked to charge, and approves
-+		const charged: number[] = [];
-+		const recording: CardReader = {
-+			charge: (cents: number) => {
-+				charged.push(cents);
-+				return true;
-+			},
-+		};
++	it("charges the price with the modification", () => {
++		const reader = new RecordingReader();
 +
-+		buyCoffee(recording);
++		buyCoffee(reader, "iced");
 +
-+		expect(charged).to.deep.equal([450]);
++		expect(reader.charged).to.deep.equal([500]);
 +	});
  });

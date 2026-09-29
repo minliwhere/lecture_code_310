@@ -1,4 +1,4 @@
-commit 491eceea697ff5995c6df93e3c2c3a52fb4d7a4d
+commit 8a5325544e578618a6d19a9230b32c1de2673ea1
 Author: b <a@b>
 Date:   Tue Oct 6 10:50:00 2026 -0700
 
@@ -6,10 +6,11 @@ Date:   Tue Oct 6 10:50:00 2026 -0700
     
     The tests hand checkout() stand-ins for CoastPay, so nobody is charged:
     
-    - approving and declining always give the same answer, so each test
-      picks the outcome it needs.
-    - recording remembers every amount it's asked to charge, so a test can
-      check that checkout() charged the price of the offering, in cents.
+    - ApprovingProcessor and DecliningProcessor always give the same
+      answer, so each test picks the outcome it needs.
+    - RecordingProcessor remembers every amount it's asked to charge, so a
+      test can check that checkout() charged the price of the offering, in
+      cents.
     
     All three keep PaymentProcessor's contract: they return true or false,
     and never throw.
@@ -19,10 +20,10 @@ Date:   Tue Oct 6 10:50:00 2026 -0700
     reason to replace it.
 
 diff --git a/test/payment.spec.ts b/test/payment.spec.ts
-index 48ea438..49316b7 100644
+index 48ea438..0d544c2 100644
 --- a/test/payment.spec.ts
 +++ b/test/payment.spec.ts
-@@ -1,4 +1,45 @@
+@@ -1,4 +1,57 @@
  import { expect } from "chai";
 -import { checkout } from "../src/payment";
 +import { checkout, PaymentProcessor } from "../src/payment";
@@ -30,15 +31,34 @@ index 48ea438..49316b7 100644
  
 -describe("checkout", () => {});
 +// stand-ins for CoastPay: each always gives the same answer
-+const approving: PaymentProcessor = { charge: (cents: number) => true };
-+const declining: PaymentProcessor = { charge: (cents: number) => false };
++class ApprovingProcessor implements PaymentProcessor {
++	public charge(cents: number): boolean {
++		return true;
++	}
++}
++
++class DecliningProcessor implements PaymentProcessor {
++	public charge(cents: number): boolean {
++		return false;
++	}
++}
++
++// remembers every amount it's asked to charge, and approves
++class RecordingProcessor implements PaymentProcessor {
++	public charged: number[] = [];
++
++	public charge(cents: number): boolean {
++		this.charged.push(cents);
++		return true;
++	}
++}
 +
 +describe("checkout", () => {
 +	it("registers the customer when the card is charged", () => {
 +		const offering = findOffering("FT-110-B")!;
 +		const customer = findCustomer("c11")!;
 +
-+		checkout(offering, customer, approving);
++		checkout(offering, customer, new ApprovingProcessor());
 +
 +		expect(offering.isRegistered(customer)).to.equal(true);
 +	});
@@ -47,7 +67,7 @@ index 48ea438..49316b7 100644
 +		const offering = findOffering("FT-110-B")!;
 +		const customer = findCustomer("c12")!;
 +
-+		checkout(offering, customer, declining);
++		checkout(offering, customer, new DecliningProcessor());
 +
 +		expect(offering.isRegistered(customer)).to.equal(false);
 +	});
@@ -55,18 +75,11 @@ index 48ea438..49316b7 100644
 +	it("charges the price of the offering, in cents", () => {
 +		const offering = findOffering("FT-110-B")!;
 +		const customer = findCustomer("c13")!;
-+		// remembers every amount it's asked to charge, and approves
-+		const charged: number[] = [];
-+		const recording: PaymentProcessor = {
-+			charge: (cents: number) => {
-+				charged.push(cents);
-+				return true;
-+			},
-+		};
++		const processor = new RecordingProcessor();
 +
-+		checkout(offering, customer, recording);
++		checkout(offering, customer, processor);
 +
 +		// priceFor(offering, customer) is $117.81 for a resident adult
-+		expect(charged).to.deep.equal([11781]);
++		expect(processor.charged).to.deep.equal([11781]);
 +	});
 +});

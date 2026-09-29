@@ -1,0 +1,71 @@
+commit d60fa16b1dbd099cea43b82cbf3a8395feccf09c
+Author: b <a@b>
+Date:   Tue Oct 6 10:10:00 2026 -0700
+
+    Extract the price, like we extracted messageFor
+    
+    The tests can't choose what the bank says: buyCoffee() makes its own
+    BankCardReader, and the bank approves or declines at random.
+    
+    Part of buyCoffee() doesn't need the bank at all: working out the price.
+    So this makes the same move as messageFor(). getPrice() is handed the
+    modification and returns what to charge. It never touches the reader,
+    so its tests pass every run.
+    
+    But the charge is still in buyCoffee(), and so is the bank's random
+    answer. Extracting worked for messageFor() because what it needed from
+    the clock was just a value. What buyCoffee() needs from the bank is a
+    call: charging the card is buyCoffee()'s job. Passing in the bank's
+    answer instead would hand that job to whoever calls buyCoffee().
+    
+    We want to control the bank's answer without taking away the charge.
+
+diff --git a/src/cart.ts b/src/cart.ts
+index 182a649..db96ac8 100644
+--- a/src/cart.ts
++++ b/src/cart.ts
+@@ -1,10 +1,14 @@
+ import { BankCardReader } from "./bank";
+ 
+ // prices are in cents
+-export function buyCoffee(modification?: string): string {
+-	const reader = new BankCardReader();
++export function getPrice(modification?: string): number {
+ 	let price = 450;
+ 	if (modification === "decaf") price += 100;
+ 	else if (modification === "iced") price += 50;
+-	return reader.charge(price) ? "enjoy your coffee" : "card declined";
++	return price;
++}
++
++export function buyCoffee(modification?: string): string {
++	const reader = new BankCardReader();
++	return reader.charge(getPrice(modification)) ? "enjoy your coffee" : "card declined";
+ }
+diff --git a/test/cart.spec.ts b/test/cart.spec.ts
+index ee09a13..b9bdf2f 100644
+--- a/test/cart.spec.ts
++++ b/test/cart.spec.ts
+@@ -1,6 +1,21 @@
+ import { expect } from "chai";
+-import { buyCoffee } from "../src/cart";
++import { buyCoffee, getPrice } from "../src/cart";
+ 
++describe("getPrice", () => {
++	it("adds $1 for decaf", () => {
++		expect(getPrice("decaf")).to.equal(550);
++	});
++
++	it("adds 50 cents for iced", () => {
++		expect(getPrice("iced")).to.equal(500);
++	});
++
++	it("keeps the price with no modification", () => {
++		expect(getPrice()).to.equal(450);
++	});
++});
++
++// we still can't choose what the bank says when buyCoffee charges the card
+ describe("buyCoffee", () => {
+ 	it("serves coffee when the card is charged", () => {
+ 		expect(buyCoffee("iced")).to.equal("enjoy your coffee");

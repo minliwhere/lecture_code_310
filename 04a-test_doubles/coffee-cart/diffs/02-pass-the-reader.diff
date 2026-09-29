@@ -1,87 +1,117 @@
-commit 17b438c899b771dfc6ac5e4b0a655620a5b7450a
+commit e177e0f53cf21aec9d22c8a7cdbcdfc7f9f0c0a2
 Author: b <a@b>
 Date:   Tue Oct 6 10:20:00 2026 -0700
 
-    Pass in the card reader, not the answer
+    Pass in the card reader
     
     Instead of handing buyCoffee() the bank's answer, hand it the thing
-    that gives answers. buyCoffee() keeps its job, charging 450 cents and
+    that gives answers. buyCoffee() keeps its job, charging the price and
     reacting, and whoever calls it decides which card reader it uses.
     
-    That needs a type for "a card reader", so cart.ts declares CardReader,
+    That needs a type for "a card reader", so reader.ts declares IReader,
     with its contract: true if charged, false if declined, never throws.
-    BankCardReader implements it. Before, cart.ts imported bank.ts: the cart
-    depended on the bank. Now bank.ts imports cart.ts. The cart says what it
-    needs, and the bank provides it. That is the dependency inversion
+    Before, cart.ts imported bank.ts: the cart depended on the bank. Now
+    neither imports the other. The cart depends on IReader, and
+    BankCardReader implements it. That is the dependency inversion
     principle. main.ts is the one place that picks the real bank.
     
     The tests hand buyCoffee() stand-ins for the bank, test doubles that
     always give the same answer, so each test picks the outcome it needs.
-    Both tests pass every run.
+    Every test passes every run.
 
 diff --git a/src/bank.ts b/src/bank.ts
-index 42112ff..d3bc72d 100644
+index 42112ff..2f9068e 100644
 --- a/src/bank.ts
 +++ b/src/bank.ts
 @@ -1,8 +1,9 @@
-+import { CardReader } from "./cart";
++import { IReader } from "./reader";
 +
  /**
   * The coffee cart's card reader. Every charge goes to the bank, and an approved charge is real money.
   */
 -export class BankCardReader {
 -	/** Returns true if the card was charged, false if it was declined. Never throws. */
-+export class BankCardReader implements CardReader {
++export class BankCardReader implements IReader {
  	public charge(cents: number): boolean {
  		// There's no bank behind this code, so this stands in for the bank's answer.
  		// Like the real thing, the caller doesn't get to pick.
 diff --git a/src/cart.ts b/src/cart.ts
-index f9fe7da..c3bc791 100644
+index db96ac8..62a9d0b 100644
 --- a/src/cart.ts
 +++ b/src/cart.ts
-@@ -1,3 +1,9 @@
--export function buyCoffee(charged: boolean): string {
--	return charged ? "enjoy your coffee" : "card declined";
+@@ -1,4 +1,4 @@
+-import { BankCardReader } from "./bank";
++import { IReader } from "./reader";
+ 
+ // prices are in cents
+ export function getPrice(modification?: string): number {
+@@ -8,7 +8,6 @@ export function getPrice(modification?: string): number {
+ 	return price;
+ }
+ 
+-export function buyCoffee(modification?: string): string {
+-	const reader = new BankCardReader();
++export function buyCoffee(reader: IReader, modification?: string): string {
+ 	return reader.charge(getPrice(modification)) ? "enjoy your coffee" : "card declined";
+ }
+diff --git a/src/main.ts b/src/main.ts
+index 6a91619..588ba34 100644
+--- a/src/main.ts
++++ b/src/main.ts
+@@ -1,3 +1,4 @@
+ import { buyCoffee } from "./cart";
++import { BankCardReader } from "./bank";
+ 
+-console.log(buyCoffee("iced"));
++console.log(buyCoffee(new BankCardReader(), "iced"));
+diff --git a/src/reader.ts b/src/reader.ts
+new file mode 100644
+index 0000000..bcad198
+--- /dev/null
++++ b/src/reader.ts
+@@ -0,0 +1,5 @@
 +/** Whatever the cart charges a card through. */
-+export interface CardReader {
++export interface IReader {
 +	/** Returns true if the card was charged, false if it was declined. Never throws. */
 +	charge(cents: number): boolean;
 +}
-+
-+export function buyCoffee(reader: CardReader): string {
-+	return reader.charge(450) ? "enjoy your coffee" : "card declined";
- }
-diff --git a/src/main.ts b/src/main.ts
-index 397752d..1cedb7f 100644
---- a/src/main.ts
-+++ b/src/main.ts
-@@ -1,4 +1,4 @@
- import { buyCoffee } from "./cart";
- import { BankCardReader } from "./bank";
- 
--console.log(buyCoffee(new BankCardReader().charge(450)));
-+console.log(buyCoffee(new BankCardReader()));
 diff --git a/test/cart.spec.ts b/test/cart.spec.ts
-index 899adc0..9af5036 100644
+index b9bdf2f..20d1778 100644
 --- a/test/cart.spec.ts
 +++ b/test/cart.spec.ts
-@@ -1,12 +1,16 @@
+@@ -1,5 +1,19 @@
  import { expect } from "chai";
--import { buyCoffee } from "../src/cart";
-+import { buyCoffee, CardReader } from "../src/cart";
+ import { buyCoffee, getPrice } from "../src/cart";
++import { IReader } from "../src/reader";
 +
 +// stand-ins for the bank: each always gives the same answer
-+const approving: CardReader = { charge: (cents: number) => true };
-+const declining: CardReader = { charge: (cents: number) => false };
++class ApprovingReader implements IReader {
++	public charge(cents: number): boolean {
++		return true;
++	}
++}
++
++class DecliningReader implements IReader {
++	public charge(cents: number): boolean {
++		return false;
++	}
++}
  
+ describe("getPrice", () => {
+ 	it("adds $1 for decaf", () => {
+@@ -15,13 +29,12 @@ describe("getPrice", () => {
+ 	});
+ });
+ 
+-// we still can't choose what the bank says when buyCoffee charges the card
  describe("buyCoffee", () => {
  	it("serves coffee when the card is charged", () => {
--		expect(buyCoffee(true)).to.equal("enjoy your coffee");
-+		expect(buyCoffee(approving)).to.equal("enjoy your coffee");
+-		expect(buyCoffee("iced")).to.equal("enjoy your coffee");
++		expect(buyCoffee(new ApprovingReader(), "iced")).to.equal("enjoy your coffee");
  	});
  
  	it("refuses when the card is declined", () => {
--		expect(buyCoffee(false)).to.equal("card declined");
-+		expect(buyCoffee(declining)).to.equal("card declined");
+-		expect(buyCoffee("decaf")).to.equal("card declined");
++		expect(buyCoffee(new DecliningReader(), "decaf")).to.equal("card declined");
  	});
  });

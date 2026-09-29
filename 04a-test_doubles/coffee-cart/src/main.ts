@@ -1,3 +1,3 @@
 import { buyCoffee } from "./cart";
 
-console.log(buyCoffee());
+console.log(buyCoffee("iced"));
