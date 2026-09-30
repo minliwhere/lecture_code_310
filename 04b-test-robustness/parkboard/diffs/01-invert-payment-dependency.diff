@@ -2,7 +2,7 @@ commit b104577f3155853bd07b265040d29a444b464126
 Author: b <a@b>
 Date:   Tue Oct 6 10:40:00 2026 -0700
 
-    REFACTOR-0010: checkout depends on a PaymentProcessor, not on CoastPay
+    REFACTOR-0010: checkout depends on a IPaymentProcessor, not on CoastPay
     
     checkout() can't be tested. It makes its own CoastPayTerminal, so a
     test can't choose what the charge returns. CoastPay approves or declines
@@ -19,18 +19,12 @@ index 5455020..2250555 100644
 --- a/src/coastpay.ts
 +++ b/src/coastpay.ts
 @@ -1,3 +1,5 @@
-+import { PaymentProcessor } from "./payment";
++import { IPaymentProcessor } from "./payment";
 +
- /**
-  * The CoastPay card terminal on every front desk counter. The customer taps or inserts their card, and
-  * the terminal reads it.
 @@ -5,8 +7,7 @@
-  * CoastPay is the payment processor the city signed with. Every charge goes over the network to
-  * CoastPay's servers, and an approved charge is real money leaving a real customer's account.
-  */
 -export class CoastPayTerminal {
 -	/** Returns true if the card was charged, false if it was declined. Never throws. */
-+export class CoastPayTerminal implements PaymentProcessor {
++export class CoastPayTerminal implements IPaymentProcessor {
  	public charge(cents: number): boolean {
  		// There is no CoastPay account behind this code, so this stands in for CoastPay's answer.
  		// Like the real thing, the caller doesn't get to pick which answer comes back.
@@ -70,7 +64,7 @@ index 7430d07..886ae70 100644
   */
  
 +/** Whatever the front desk charges a card through. */
-+export interface PaymentProcessor {
++export interface IPaymentProcessor {
 +	/** Returns true if the card was charged, false if it was declined. Never throws. */
 +	charge(cents: number): boolean;
 +}
@@ -78,11 +72,11 @@ index 7430d07..886ae70 100644
  const CENTS_PER_DOLLAR = 100;
  
 -export function checkout(offering: Offering, customer: Customer): string {
-+export function checkout(offering: Offering, customer: Customer, processor: PaymentProcessor): string {
++export function checkout(offering: Offering, customer: Customer, processor: IPaymentProcessor): string {
  	const amount = priceFor(offering, customer);
 -	const terminal = new CoastPayTerminal();
--	if (!terminal.charge(Math.round(amount * CENTS_PER_DOLLAR))) {
-+	if (!processor.charge(Math.round(amount * CENTS_PER_DOLLAR))) {
+-	const success = await terminal.charge(Math.round(amount * CENTS_PER_DOLLAR));
++	const success = await processor.charge(Math.round(amount * CENTS_PER_DOLLAR));
  		return `card declined — ${customer.name} is not registered`;
  	}
  

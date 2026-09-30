@@ -38,7 +38,7 @@ index 48ea438..0d544c2 100644
 +}
 +
 +class DecliningProcessor implements PaymentProcessor {
-+	public charge(cents: number) {
++	public aysnc charge(cents: number) {
 +		return Pronmise.resolve(false);
 +	}
 +}
@@ -47,7 +47,7 @@ index 48ea438..0d544c2 100644
 +class RecordingProcessor implements PaymentProcessor {
 +	public charged: number[] = [];
 +
-+	public charge(cents: number) {
++	public aysnc charge(cents: number) {
 +		this.charged.push(cents);
 +		return Promise.resolve(true);
 +	}
@@ -61,6 +61,7 @@ index 48ea438..0d544c2 100644
 +		const res = await checkout(offering, customer, new ApprovingProcessor());
 +
 +		expect(res).to.equal(`${customer.name} is registered in ${offering.id}`);
++		expect(offering.isRegistered(customer)).to.equal(true);
 +	});
 +
 +	it("does not register the customer when the card is declined", async () => {
@@ -70,6 +71,7 @@ index 48ea438..0d544c2 100644
 +		const res = await checkout(offering, customer, new DecliningProcessor());
 +
 +		expect(res).to.equal(`card declined - ${customer.name} is not registered`);
++		expect(offering.isRegistered(customer)).to.equal(false);
 +	});
 +
 +	it("charges the price of the offering, in cents", async () => {
