@@ -20,13 +20,3 @@ Our doubles let a test choose what the bank says, but not see what buyCoffee ask
 3. Implement:
     - Write a double that remembers every amount it's asked to charge, and approves.
     - Pass it to buyCoffee, then check what it remembered.
-
-## Activity: Parkboard’s checkout
-
-checkout() in src/payment.ts has the same problem as buyCoffee.
-
-1. Analyze: Run yarn start pay FT-110-B c11 a few times. What stops you from testing checkout()?
-2. Implement: Make checkout() depend on an interface instead of creating a CoastPayTerminal. The pay command in main.ts should still use the real one.
-3. Test: Write tests for an approved card and a declined card, plus one that checks checkout() charged the right amount.
-
-Hint: customers c11, c12,and c13 aren’t registered in FT-110-B. Use the real priceFor to work out the expected amount.
