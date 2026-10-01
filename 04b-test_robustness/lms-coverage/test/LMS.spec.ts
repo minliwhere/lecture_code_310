@@ -1,0 +1,181 @@
+import { expect } from "chai";
+import { LMSImpl } from "../src/LMSImpl";
+
+describe("LMS", () => {
+	let lms: LMSImpl;
+
+	beforeEach(() => {
+		lms = new LMSImpl();
+	});
+
+	describe("getLetterGrade", () => {
+		// Input:  valid 0 to 100 | invalid below 0 | invalid above 100
+		// Output: "A" | "B" | "C" | "D" | "F" | RangeError
+		// The spec doesn't say: grades between ranges, like 79.5, or NaN
+
+		it("throws a RangeError for -1", () => {
+			expect(() => lms.getLetterGrade(-1)).to.throw(RangeError);
+		});
+
+		it('returns "F" for 0, 25, and 49', () => {
+			expect(lms.getLetterGrade(0)).to.equal("F");
+			expect(lms.getLetterGrade(25)).to.equal("F");
+			expect(lms.getLetterGrade(49)).to.equal("F");
+		});
+
+		it('returns "D" for 50, 52, and 54', () => {
+			expect(lms.getLetterGrade(50)).to.equal("D");
+			expect(lms.getLetterGrade(52)).to.equal("D");
+			expect(lms.getLetterGrade(54)).to.equal("D");
+		});
+
+		it('returns "C" for 55, 60, and 67', () => {
+			expect(lms.getLetterGrade(55)).to.equal("C");
+			expect(lms.getLetterGrade(60)).to.equal("C");
+			expect(lms.getLetterGrade(67)).to.equal("C");
+		});
+
+		it('returns "B" for 68, 72, and 79', () => {
+			expect(lms.getLetterGrade(68)).to.equal("B");
+			expect(lms.getLetterGrade(72)).to.equal("B");
+			expect(lms.getLetterGrade(79)).to.equal("B");
+		});
+
+		it('returns "A" for 80, 90, and 100', () => {
+			expect(lms.getLetterGrade(80)).to.equal("A");
+			expect(lms.getLetterGrade(90)).to.equal("A");
+			expect(lms.getLetterGrade(100)).to.equal("A");
+		});
+
+		it("throws a RangeError for 101", () => {
+			expect(() => lms.getLetterGrade(101)).to.throw(RangeError);
+		});
+	});
+
+	describe("computeGPA", () => {
+		// Input:  each course: grade by letter A to F | credits 1 to 4 | a retake of an earlier course or not
+		//         the list: empty | one course | several courses
+		// Output: 0.0 | between | 4.0
+		// The spec doesn't say: whether "cpsc 310" is a retake of "CPSC 310"
+
+		it("returns 0.0 for no courses", () => {
+			expect(lms.computeGPA([])).to.equal(0);
+		});
+
+		it("returns 3.0 for one B worth 3 credits", () => {
+			expect(lms.computeGPA([{ course: "CPSC 310", grade: 72, credits: 3 }])).to.equal(3);
+		});
+
+		it("returns 2.0 for one course of each letter, 1 credit each", () => {
+			// (4 + 3 + 2 + 1 + 0) / 5
+			const gpa = lms.computeGPA([
+				{ course: "CPSC 310", grade: 90, credits: 1 },
+				{ course: "CPSC 313", grade: 72, credits: 1 },
+				{ course: "CPSC 320", grade: 60, credits: 1 },
+				{ course: "MATH 200", grade: 52, credits: 1 },
+				{ course: "STAT 241", grade: 25, credits: 1 },
+			]);
+			expect(gpa).to.equal(2);
+		});
+
+		it("returns 3.5 for an A worth 3 credits and a C worth 1", () => {
+			// (4 × 3 + 2 × 1) / (3 + 1)
+			const gpa = lms.computeGPA([
+				{ course: "CPSC 310", grade: 85, credits: 3 },
+				{ course: "MATH 200", grade: 60, credits: 1 },
+			]);
+			expect(gpa).to.equal(3.5);
+		});
+
+		it("returns 0.8 for an A worth 1 credit and an F worth 4", () => {
+			// (4 × 1 + 0 × 4) / (1 + 4)
+			const gpa = lms.computeGPA([
+				{ course: "CPSC 310", grade: 90, credits: 1 },
+				{ course: "MATH 200", grade: 30, credits: 4 },
+			]);
+			expect(gpa).to.be.closeTo(0.8, 0.001);
+		});
+
+		it("returns 4.0 when every course is an A", () => {
+			const gpa = lms.computeGPA([
+				{ course: "CPSC 310", grade: 100, credits: 4 },
+				{ course: "MATH 200", grade: 80, credits: 1 },
+			]);
+			expect(gpa).to.equal(4);
+		});
+
+		it("returns 0.0 when every course is an F", () => {
+			const gpa = lms.computeGPA([
+				{ course: "CPSC 310", grade: 0, credits: 3 },
+				{ course: "MATH 200", grade: 49, credits: 2 },
+			]);
+			expect(gpa).to.equal(0);
+		});
+
+		it("returns 3.0 for an F retaken as an A, plus a C", () => {
+			// CPSC 310 counts once, as an A: (4 × 3 + 2 × 3) / (3 + 3)
+			const gpa = lms.computeGPA([
+				{ course: "CPSC 310", grade: 40, credits: 3 },
+				{ course: "MATH 200", grade: 60, credits: 3 },
+				{ course: "CPSC 310", grade: 85, credits: 3 },
+			]);
+			expect(gpa).to.equal(3);
+		});
+
+		it("returns 0.0 for an A retaken as an F", () => {
+			const gpa = lms.computeGPA([
+				{ course: "CPSC 310", grade: 85, credits: 3 },
+				{ course: "CPSC 310", grade: 40, credits: 3 },
+			]);
+			expect(gpa).to.equal(0);
+		});
+	});
+
+	describe("computeGrade", () => {
+		// Input:  each assessment: weight 0 to 1 | points 0 to maxPoints | points above maxPoints
+		//         the list: one assessment | several assessments
+		// Output: 0 | between | 100 | Error
+		// Not tested: weights that don't sum to 1, since the caller must not pass them
+		// The spec doesn't say: an assessment out of 0 points
+
+		it("returns 50 for 5/10 on one assessment worth everything", () => {
+			expect(lms.computeGrade([{ id: "Final", weight: 1, points: 5, maxPoints: 10 }])).to.be.closeTo(50, 0.001);
+		});
+
+		it("returns 82 for 90/100 worth 0.8 and 5/10 worth 0.2", () => {
+			const grade = lms.computeGrade([
+				{ id: "Final", weight: 0.8, points: 90, maxPoints: 100 },
+				{ id: "Assignment_1", weight: 0.2, points: 5, maxPoints: 10 },
+			]);
+			expect(grade).to.be.closeTo(82, 0.001);
+		});
+
+		it("returns 0 for 0 points on every assessment", () => {
+			const grade = lms.computeGrade([
+				{ id: "Quiz_1", weight: 0.5, points: 0, maxPoints: 10 },
+				{ id: "Quiz_2", weight: 0.5, points: 0, maxPoints: 15 },
+			]);
+			expect(grade).to.be.closeTo(0, 0.001);
+		});
+
+		it("returns 100 for full marks on every assessment", () => {
+			const grade = lms.computeGrade([
+				{ id: "Final", weight: 0.8, points: 100, maxPoints: 100 },
+				{ id: "Assignment_1", weight: 0.2, points: 10, maxPoints: 10 },
+			]);
+			expect(grade).to.be.closeTo(100, 0.001);
+		});
+
+		it("returns 100 for 0/10 worth 0 and 10/10 worth 1", () => {
+			const grade = lms.computeGrade([
+				{ id: "Practice", weight: 0, points: 0, maxPoints: 10 },
+				{ id: "Final", weight: 1, points: 10, maxPoints: 10 },
+			]);
+			expect(grade).to.be.closeTo(100, 0.001);
+		});
+
+		it("throws for 11/10", () => {
+			expect(() => lms.computeGrade([{ id: "Quiz_1", weight: 1, points: 11, maxPoints: 10 }])).to.throw(Error);
+		});
+	});
+});

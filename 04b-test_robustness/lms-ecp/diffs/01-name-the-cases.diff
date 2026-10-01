@@ -1,0 +1,89 @@
+commit 3b06a64227587a9570e81bd4dcc96928e163f5eb
+Author: b <a@b>
+Date:   Thu Oct 8 10:15:00 2026 -0700
+
+    Name a test for each partition
+    
+    LMSImpl isn't written yet, so every case has to come from the spec.
+    Each describe starts with the partitions, then gives a pending test
+    (an it() with no function) per case. Each title says the input and
+    the expected output, so the suite reads as the list of cases even
+    before any assertion exists.
+    
+    Input partitions come from each parameter's type and @param:
+    getLetterGrade has one valid class, 0 to 100, and an invalid class on
+    each side of it. Output partitions come from @returns and @throws: the
+    five letters and RangeError. The output view is what splits the one
+    valid input class into five, and each class gets its two boundaries.
+    
+    computeGPA has no invalid inputs, but the input view still picks
+    cases the output view wouldn't: a 1-credit and a 4-credit course, an
+    empty list, a retake. The output view adds 0.0 and 4.0. Retakes go
+    both ways, F then A and A then F, so a GPA that counted the best
+    attempt instead of the latest would fail.
+    
+    computeGrade has a precondition: weights must sum to 1. Weights that
+    don't aren't a partition. The caller broke the contract, so there's
+    nothing to expect.
+    
+    Each describe also lists what the spec doesn't say: 79.5 or NaN,
+    whether "cpsc 310" retakes "CPSC 310", an assessment out of 0. These
+    aren't missing tests. They're questions for whoever owns the spec.
+
+diff --git a/test/LMS.spec.ts b/test/LMS.spec.ts
+index 6280825..35a4f8f 100644
+--- a/test/LMS.spec.ts
++++ b/test/LMS.spec.ts
+@@ -8,9 +8,49 @@ describe("LMS", () => {
+ 		lms = new LMSImpl();
+ 	});
+ 
+-	describe("getLetterGrade", () => {});
++	describe("getLetterGrade", () => {
++		// Input:  valid 0 to 100 | invalid below 0 | invalid above 100
++		// Output: "A" | "B" | "C" | "D" | "F" | RangeError
++		// The spec doesn't say: grades between ranges, like 79.5, or NaN
+ 
+-	describe("computeGPA", () => {});
++		it("throws a RangeError for -1");
++		it('returns "F" for 0, 25, and 49');
++		it('returns "D" for 50, 52, and 54');
++		it('returns "C" for 55, 60, and 67');
++		it('returns "B" for 68, 72, and 79');
++		it('returns "A" for 80, 90, and 100');
++		it("throws a RangeError for 101");
++	});
++
++	describe("computeGPA", () => {
++		// Input:  each course: grade by letter A to F | credits 1 to 4 | a retake of an earlier course or not
++		//         the list: empty | one course | several courses
++		// Output: 0.0 | between | 4.0
++		// The spec doesn't say: whether "cpsc 310" is a retake of "CPSC 310"
++
++		it("returns 0.0 for no courses");
++		it("returns 3.0 for one B worth 3 credits");
++		it("returns 2.0 for one course of each letter, 1 credit each");
++		it("returns 3.5 for an A worth 3 credits and a C worth 1");
++		it("returns 0.8 for an A worth 1 credit and an F worth 4");
++		it("returns 4.0 when every course is an A");
++		it("returns 0.0 when every course is an F");
++		it("returns 3.0 for an F retaken as an A, plus a C");
++		it("returns 0.0 for an A retaken as an F");
++	});
++
++	describe("computeGrade", () => {
++		// Input:  each assessment: weight 0 to 1 | points 0 to maxPoints | points above maxPoints
++		//         the list: one assessment | several assessments
++		// Output: 0 | between | 100 | Error
++		// Not tested: weights that don't sum to 1, since the caller must not pass them
++		// The spec doesn't say: an assessment out of 0 points
+ 
+-	describe("computeGrade", () => {});
++		it("returns 50 for 5/10 on one assessment worth everything");
++		it("returns 82 for 90/100 worth 0.8 and 5/10 worth 0.2");
++		it("returns 0 for 0 points on every assessment");
++		it("returns 100 for full marks on every assessment");
++		it("returns 100 for 0/10 worth 0 and 10/10 worth 1");
++		it("throws for 11/10");
++	});
+ });

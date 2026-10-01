@@ -1,0 +1,86 @@
+commit b43e71688eff19fc1b68eea889050a6612267024
+Author: b <a@b>
+Date:   Thu Oct 8 11:10:00 2026 -0700
+
+    Reach the last line with a test double
+    
+    yarn cover shows one line our tests never run: the default in
+    gradePoints(). It throws when a letter grade has no grade points.
+    
+    No input can get there. gradePoints() only ever sees what
+    getLetterGrade() returns, and getLetterGrade() only returns A to F.
+    Every case the spec describes is already tested; this line is for a
+    case the spec can't produce.
+    
+    We can still reach it, with the move from last lecture. computeGPA
+    depends on a LetterGrader interface instead of grading directly, the
+    real grader moves into PercentLetterGrader, and a test passes in a
+    MadeUpLetterGrader that returns "G". Coverage is now 100%.
+    
+    Look at what that cost: an interface, a new class, a constructor
+    parameter, and a double, all so one test can check something that
+    can't happen. And the test checks behaviour the spec never promised:
+    computeGPA's docs don't say it throws. Is that worth it?
+
+diff --git a/src/LMSImpl.ts b/src/LMSImpl.ts
+index 9ce5df0..00c5d06 100644
+--- a/src/LMSImpl.ts
++++ b/src/LMSImpl.ts
+@@ -1,6 +1,11 @@
+ import { Assessment, CourseCompletion, LMS } from "./LMS";
+ 
+-export class LMSImpl implements LMS {
++/** Converts a percentage grade to a letter grade. */
++export interface LetterGrader {
++	getLetterGrade(grade: number): string;
++}
++
++export class PercentLetterGrader implements LetterGrader {
+ 	getLetterGrade(grade: number): string {
+ 		if (grade < 0 || grade > 100) {
+ 			throw new RangeError(`Grade must be from 0 to 100, not ${grade}.`);
+@@ -11,6 +16,14 @@ export class LMSImpl implements LMS {
+ 		if (grade >= 50) return "D";
+ 		return "F";
+ 	}
++}
++
++export class LMSImpl implements LMS {
++	constructor(private readonly grader: LetterGrader = new PercentLetterGrader()) {}
++
++	getLetterGrade(grade: number): string {
++		return this.grader.getLetterGrade(grade);
++	}
+ 
+ 	computeGPA(completedCourses: CourseCompletion[]): number {
+ 		// a later attempt at a course replaces the earlier one
+diff --git a/test/LMS.spec.ts b/test/LMS.spec.ts
+index 67a3892..f4bc05b 100644
+--- a/test/LMS.spec.ts
++++ b/test/LMS.spec.ts
+@@ -1,5 +1,12 @@
+ import { expect } from "chai";
+-import { LMSImpl } from "../src/LMSImpl";
++import { LetterGrader, LMSImpl } from "../src/LMSImpl";
++
++// Returns a letter the real grader never does, so computeGPA has no grade points for it.
++class MadeUpLetterGrader implements LetterGrader {
++	getLetterGrade(grade: number): string {
++		return "G";
++	}
++}
+ 
+ describe("LMS", () => {
+ 	let lms: LMSImpl;
+@@ -129,6 +136,11 @@ describe("LMS", () => {
+ 			]);
+ 			expect(gpa).to.equal(0);
+ 		});
++
++		it("throws for a letter grade with no grade points", () => {
++			const madeUp = new LMSImpl(new MadeUpLetterGrader());
++			expect(() => madeUp.computeGPA([{ course: "CPSC 310", grade: 85, credits: 3 }])).to.throw(Error);
++		});
+ 	});
+ 
+ 	describe("computeGrade", () => {

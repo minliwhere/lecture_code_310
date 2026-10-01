@@ -1,0 +1,145 @@
+commit 79d3a1ad041c4fcdbbffde0106c0f994faf046a7
+Author: b <a@b>
+Date:   Thu Oct 8 11:25:00 2026 -0700
+
+    Let the types rule out the missing letter
+    
+    Undo the test double. Instead of testing that an impossible letter
+    throws, make it impossible to write.
+    
+    getLetterGrade() now returns a LetterGrade, "A" | "B" | "C" | "D" |
+    "F", instead of any string. GRADE_POINTS is a Record<LetterGrade,
+    number>, which must have a value for every letter, so there's no
+    default case left to cover. If someone adds "A+" to LetterGrade and
+    forgets its grade points, the code doesn't compile.
+    
+    The @returns line no longer lists the letters: the type says it, and
+    the compiler checks it. Coverage is 100% with no new test.
+    
+    The other options were to leave the line uncovered, or to tell the
+    coverage tool to skip it with an /* istanbul ignore */ comment. Either
+    is reasonable for truly defensive code. Coverage is a way to find
+    untested behaviour, not a score to max out.
+
+diff --git a/src/LMS.ts b/src/LMS.ts
+index 5955fc6..a1bff92 100644
+--- a/src/LMS.ts
++++ b/src/LMS.ts
+@@ -1,3 +1,6 @@
++/** A letter grade. */
++export type LetterGrade = "A" | "B" | "C" | "D" | "F";
++
+ /** A graded piece of work in a course, such as a quiz, assignment, or exam. */
+ export interface Assessment {
+ 	/** Unique identifier, e.g. `"Quiz_1"`. */
+@@ -34,10 +37,10 @@ export interface LMS {
+ 	 * | F      | 0–49       |
+ 	 *
+ 	 * @param grade - The grade to convert, in percent. Valid grades are 0 to 100.
+-	 * @returns The letter grade: `"A"`, `"B"`, `"C"`, `"D"`, or `"F"`.
++	 * @returns The letter grade.
+ 	 * @throws RangeError if grade is below 0 or above 100.
+ 	 */
+-	getLetterGrade(grade: number): string;
++	getLetterGrade(grade: number): LetterGrade;
+ 
+ 	/**
+ 	 * Computes a student's GPA, weighting each course by its credits.
+diff --git a/src/LMSImpl.ts b/src/LMSImpl.ts
+index 00c5d06..f2aac78 100644
+--- a/src/LMSImpl.ts
++++ b/src/LMSImpl.ts
+@@ -1,12 +1,10 @@
+-import { Assessment, CourseCompletion, LMS } from "./LMS";
++import { Assessment, CourseCompletion, LetterGrade, LMS } from "./LMS";
+ 
+-/** Converts a percentage grade to a letter grade. */
+-export interface LetterGrader {
+-	getLetterGrade(grade: number): string;
+-}
++// a Record needs a value for every LetterGrade, so the compiler checks that none are missing
++const GRADE_POINTS: Record<LetterGrade, number> = { A: 4, B: 3, C: 2, D: 1, F: 0 };
+ 
+-export class PercentLetterGrader implements LetterGrader {
+-	getLetterGrade(grade: number): string {
++export class LMSImpl implements LMS {
++	getLetterGrade(grade: number): LetterGrade {
+ 		if (grade < 0 || grade > 100) {
+ 			throw new RangeError(`Grade must be from 0 to 100, not ${grade}.`);
+ 		}
+@@ -16,14 +14,6 @@ export class PercentLetterGrader implements LetterGrader {
+ 		if (grade >= 50) return "D";
+ 		return "F";
+ 	}
+-}
+-
+-export class LMSImpl implements LMS {
+-	constructor(private readonly grader: LetterGrader = new PercentLetterGrader()) {}
+-
+-	getLetterGrade(grade: number): string {
+-		return this.grader.getLetterGrade(grade);
+-	}
+ 
+ 	computeGPA(completedCourses: CourseCompletion[]): number {
+ 		// a later attempt at a course replaces the earlier one
+@@ -35,7 +25,7 @@ export class LMSImpl implements LMS {
+ 		let totalPoints = 0;
+ 		let totalCredits = 0;
+ 		for (const { grade, credits } of latestAttempts.values()) {
+-			totalPoints += this.gradePoints(this.getLetterGrade(grade)) * credits;
++			totalPoints += GRADE_POINTS[this.getLetterGrade(grade)] * credits;
+ 			totalCredits += credits;
+ 		}
+ 		return totalCredits === 0 ? 0 : totalPoints / totalCredits;
+@@ -51,21 +41,4 @@ export class LMSImpl implements LMS {
+ 		}
+ 		return total * 100;
+ 	}
+-
+-	private gradePoints(letter: string): number {
+-		switch (letter) {
+-			case "A":
+-				return 4;
+-			case "B":
+-				return 3;
+-			case "C":
+-				return 2;
+-			case "D":
+-				return 1;
+-			case "F":
+-				return 0;
+-			default:
+-				throw new Error(`No grade points for letter grade ${letter}.`);
+-		}
+-	}
+ }
+diff --git a/test/LMS.spec.ts b/test/LMS.spec.ts
+index f4bc05b..67a3892 100644
+--- a/test/LMS.spec.ts
++++ b/test/LMS.spec.ts
+@@ -1,12 +1,5 @@
+ import { expect } from "chai";
+-import { LetterGrader, LMSImpl } from "../src/LMSImpl";
+-
+-// Returns a letter the real grader never does, so computeGPA has no grade points for it.
+-class MadeUpLetterGrader implements LetterGrader {
+-	getLetterGrade(grade: number): string {
+-		return "G";
+-	}
+-}
++import { LMSImpl } from "../src/LMSImpl";
+ 
+ describe("LMS", () => {
+ 	let lms: LMSImpl;
+@@ -136,11 +129,6 @@ describe("LMS", () => {
+ 			]);
+ 			expect(gpa).to.equal(0);
+ 		});
+-
+-		it("throws for a letter grade with no grade points", () => {
+-			const madeUp = new LMSImpl(new MadeUpLetterGrader());
+-			expect(() => madeUp.computeGPA([{ course: "CPSC 310", grade: 85, credits: 3 }])).to.throw(Error);
+-		});
+ 	});
+ 
+ 	describe("computeGrade", () => {
