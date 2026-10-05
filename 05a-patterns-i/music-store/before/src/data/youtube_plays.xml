@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plays>
+  <play id="yt-001">
+    <track>Anti-Hero (Music Video)</track>
+    <artist>Taylor Swift</artist>
+    <streams>314</streams>
+    <genre>Pop</genre>
+  </play>
+  <play id="yt-002">
+    <track>Not Like Us</track>
+    <artist>Kendrick Lamar</artist>
+    <streams>278</streams>
+    <genre>Hip-Hop</genre>
+  </play>
+  <play id="yt-003">
+    <track>bad guy (Official Video)</track>
+    <artist>Billie Eilish</artist>
+    <streams>203</streams>
+    <genre>Alternative</genre>
+  </play>
+  <play id="yt-004">
+    <track>Blinding Lights</track>
+    <artist>The Weeknd</artist>
+    <streams>189</streams>
+    <genre>R&amp;B</genre>
+  </play>
+  <play id="yt-005">
+    <track>vampire (Official Video)</track>
+    <artist>Olivia Rodrigo</artist>
+    <streams>261</streams>
+    <genre>Pop Rock</genre>
+  </play>
+  <play id="yt-006">
+    <track>Cruel Summer (Live)</track>
+    <artist>Taylor Swift</artist>
+    <streams>198</streams>
+    <genre>Pop</genre>
+  </play>
+  <play id="yt-007">
+    <track>Espresso</track>
+    <artist>Sabrina Carpenter</artist>
+    <streams>245</streams>
+    <genre>Pop</genre>
+  </play>
+  <play id="yt-008">
+    <track>HUMBLE.</track>
+    <artist>Kendrick Lamar</artist>
+    <streams>167</streams>
+    <genre>Hip-Hop</genre>
+  </play>
+</plays>
