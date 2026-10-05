@@ -12,7 +12,7 @@ const appleMusicRaw: Record<string, string>[] = parseCSV(
 );
 
 // ─── ADAPT ─────────────────────────────────────────────────────────────────────
-// Each source gets one adapter. Adding YouTube Music = one new class + one line here.
+// Each source gets one adapter.
 const spotifyData = spotifyRaw.map(spotifyAdapter);
 const appleMusicData = appleMusicRaw.map(appleMusicAdapter);
 const allRecords: MusicRecord[] = spotifyData.concat(appleMusicData);
