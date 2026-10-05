@@ -4,7 +4,7 @@
 class Engineer {
 	constructor(
 		public name: string,
-		public salary: number,
+		public salary: number
 	) {}
 
 	traverse(depth: number = 0) {
@@ -15,7 +15,7 @@ class Engineer {
 class Designer {
 	constructor(
 		public name: string,
-		public salary: number,
+		public salary: number
 	) {}
 
 	traverse(depth: number = 0) {
@@ -26,7 +26,7 @@ class Designer {
 class ProjectManager {
 	constructor(
 		public name: string,
-		public salary: number,
+		public salary: number
 	) {}
 
 	traverse(depth: number = 0) {
@@ -37,7 +37,7 @@ class ProjectManager {
 class TechLead {
 	constructor(
 		public name: string,
-		public salary: number,
+		public salary: number
 	) {}
 
 	traverse(depth: number = 0) {
@@ -54,7 +54,7 @@ class Manager {
 
 	constructor(
 		public name: string,
-		public salary: number,
+		public salary: number
 	) {}
 
 	traverse(depth: number = 0) {
@@ -66,7 +66,7 @@ class Manager {
 		for (const tl of this.techLeads) tl.traverse(depth + 1);
 	}
 
-	getSalary(): number {
+	getReportSalary(): number {
 		let total = this.salary;
 		for (const m of this.managers) total += 12345; // TODO: Replace this placeholder. A manager's reported salary is their own salary plus that of everyone who reports to them.
 		for (const e of this.engineers) total += e.salary;
@@ -86,8 +86,6 @@ class Manager {
 		return count;
 	}
 }
-
-// TODO:  add a DataScientist role! we would need to:
 
 // ─── BUILD ORG CHART ───────────────────────────────────────────────────────────
 
@@ -115,12 +113,6 @@ console.log("=== Org Chart ===");
 cto.traverse();
 
 console.log("\n=== Reports ===");
-console.log(
-	`Alice's team:  ${alice.getHeadcount()} people, ${fmt(alice.getSalary())} total salary`,
-);
-console.log(
-	`Grace's team:  ${grace.getHeadcount()} people, ${fmt(grace.getSalary())} total salary`,
-);
-console.log(
-	`CTO's org:     ${cto.getHeadcount()} people, ${fmt(cto.getSalary())} total salary`,
-);
+console.log(`Alice's team:  ${alice.getHeadcount()} people, ${fmt(alice.getReportSalary())} total salary`);
+console.log(`Grace's team:  ${grace.getHeadcount()} people, ${fmt(grace.getReportSalary())} total salary`);
+console.log(`CTO's org:     ${cto.getHeadcount()} people, ${fmt(cto.getReportSalary())} total salary`);

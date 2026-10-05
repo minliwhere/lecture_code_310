@@ -1,0 +1,14 @@
+{
+  "name": "composite-after",
+  "version": "1.0.0",
+  "description": "Org chart app — AFTER refactoring to the Composite pattern",
+  "scripts": {
+    "start": "ts-node src/index.ts",
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@types/node": "^26.0.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.0"
+  }
+}
