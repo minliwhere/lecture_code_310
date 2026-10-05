@@ -1,0 +1,61 @@
+commit 1af512a8e7dd92c58bacef254be41da8d340bab9
+Author: b <a@b>
+Date:   Mon Oct 5 15:43:20 2026 -0700
+
+    REFACTOR-0002: wrap each platform's export in an adapter
+    
+    SpotifySource and AppleMusicSource each take one platform's export as
+    it arrives, parse it, and implement MusicSource. Everything the report
+    loops used to repeat per platform (JSON vs CSV, artist_name vs By,
+    play_count vs parseInt(Streams), metadata.genre vs Style) now appears
+    exactly once, in that platform's adapter.
+    
+    The adapters take the file's contents rather than a path, so a test can
+    hand one an inline string.
+    
+    The reports don't use the adapters yet.
+
+diff --git a/src/adapters.ts b/src/adapters.ts
+new file mode 100644
+index 0000000..ac8f38a
+--- /dev/null
++++ b/src/adapters.ts
+@@ -0,0 +1,38 @@
++import { MusicRecord, MusicSource } from "./MusicSource";
++import { parseCSV } from "./utils/csvParser";
++
++export class SpotifySource implements MusicSource {
++	private plays: any[];
++
++	constructor(json: string) {
++		this.plays = JSON.parse(json);
++	}
++
++	getRecords(): MusicRecord[] {
++		return this.plays.map((play) => ({
++			id: play.stream_id,
++			track: play.track,
++			artist: play.artist_name,
++			streams: play.play_count,
++			genre: play.metadata.genre,
++		}));
++	}
++}
++
++export class AppleMusicSource implements MusicSource {
++	private plays: Record<string, string>[];
++
++	constructor(csv: string) {
++		this.plays = parseCSV(csv);
++	}
++
++	getRecords(): MusicRecord[] {
++		return this.plays.map((play) => ({
++			id: play.ID,
++			track: play.Song,
++			artist: play.By,
++			streams: parseInt(play.Streams, 10),
++			genre: play.Style,
++		}));
++	}
++}

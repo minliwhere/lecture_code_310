@@ -1,0 +1,51 @@
+commit e137bc77d4daf053c7e5ffc66fc450effa78ab3a
+Author: b <a@b>
+Date:   Mon Oct 5 15:43:20 2026 -0700
+
+    TODO-0001: fill in artist and genre for every platform
+    
+    Each report has one loop per platform, and each loop reads the artist
+    and genre from that platform's own field names: artist_name and
+    metadata.genre for Spotify, By and Style for Apple Music. Filling in
+    two fields meant four edits.
+
+diff --git a/src/MyWrapped.ts b/src/MyWrapped.ts
+index 80291e6..50f25e5 100644
+--- a/src/MyWrapped.ts
++++ b/src/MyWrapped.ts
+@@ -16,7 +16,7 @@ export class MyWrapped {
+ 		// ─── Spotify plays ──────────────────────────────────────────────────────
+ 		const spotifyPlays: any[] = JSON.parse(this.spotifyJson);
+ 		for (const play of spotifyPlays) {
+-			const artist = "Weird Al"; // TODO: fill in with the actual artist from the record!
++			const artist = play.artist_name;
+ 			const streams = play.play_count;
+ 			counts[artist] = (counts[artist] ?? 0) + streams;
+ 		}
+@@ -24,7 +24,7 @@ export class MyWrapped {
+ 		// ─── Apple Music plays ──────────────────────────────────────────────────
+ 		const appleMusicPlays: any[] = parseCSV(this.appleMusicCsv);
+ 		for (const play of appleMusicPlays) {
+-			const artist = "Weird Al"; // TODO: fill in with the actual artist from the record!
++			const artist = play.By;
+ 			const streams = parseInt(play.Streams, 10);
+ 			counts[artist] = (counts[artist] ?? 0) + streams;
+ 		}
+@@ -49,7 +49,7 @@ export class MyWrapped {
+ 		// ─── Spotify plays ──────────────────────────────────────────────────────
+ 		const spotifyPlays: any[] = JSON.parse(this.spotifyJson);
+ 		for (const play of spotifyPlays) {
+-			const genre = "Unknown"; // TODO: fill in with the actual genre!
++			const genre = play.metadata.genre;
+ 			const streams = play.play_count;
+ 			counts[genre] = (counts[genre] ?? 0) + streams;
+ 		}
+@@ -57,7 +57,7 @@ export class MyWrapped {
+ 		// ─── Apple Music plays ──────────────────────────────────────────────────
+ 		const appleMusicPlays: any[] = parseCSV(this.appleMusicCsv);
+ 		for (const play of appleMusicPlays) {
+-			const genre = "Unknown"; // TODO: fill in with the actual genre from the record!
++			const genre = play.Style;
+ 			const streams = parseInt(play.Streams, 10);
+ 			counts[genre] = (counts[genre] ?? 0) + streams;
+ 		}

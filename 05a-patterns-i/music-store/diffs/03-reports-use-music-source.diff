@@ -1,0 +1,88 @@
+commit e4e0a80f75f58be0a294070aae3419cbb89440d1
+Author: b <a@b>
+Date:   Mon Oct 5 15:50:15 2026 -0700
+
+    REFACTOR-0003: the reports loop over MusicSource, not over each platform
+    
+    Each report parsed and looped over every platform itself, so adding a
+    platform meant a new block in every report. MyWrapped now wraps each
+    export in its adapter once, in the constructor, and each report loops
+    over allPlays() once. The reports never parse, never see a
+    platform-specific field name, and don't know which platform a play came
+    from.
+    
+    The constructor still takes one export per platform and names every
+    adapter, so adding a platform still changes MyWrapped.
+
+diff --git a/src/MyWrapped.ts b/src/MyWrapped.ts
+index 50f25e5..929e80b 100644
+--- a/src/MyWrapped.ts
++++ b/src/MyWrapped.ts
+@@ -1,10 +1,16 @@
+-import { parseCSV } from "./utils/csvParser";
++import { MusicRecord, MusicSource } from "./MusicSource";
++import { SpotifySource, AppleMusicSource } from "./adapters";
+ 
+ export class MyWrapped {
+-	constructor(
+-		private spotifyJson: string,
+-		private appleMusicCsv: string
+-	) {}
++	private sources: MusicSource[];
++
++	constructor(spotifyJson: string, appleMusicCsv: string) {
++		this.sources = [new SpotifySource(spotifyJson), new AppleMusicSource(appleMusicCsv)];
++	}
++
++	private allPlays(): MusicRecord[] {
++		return this.sources.flatMap((source) => source.getRecords());
++	}
+ 
+ 	reportTopArtists(): void {
+ 		console.log("=".repeat(60));
+@@ -13,19 +19,9 @@ export class MyWrapped {
+ 
+ 		const counts: Record<string, number> = {};
+ 
+-		// ─── Spotify plays ──────────────────────────────────────────────────────
+-		const spotifyPlays: any[] = JSON.parse(this.spotifyJson);
+-		for (const play of spotifyPlays) {
+-			const artist = play.artist_name;
+-			const streams = play.play_count;
+-			counts[artist] = (counts[artist] ?? 0) + streams;
+-		}
+-
+-		// ─── Apple Music plays ──────────────────────────────────────────────────
+-		const appleMusicPlays: any[] = parseCSV(this.appleMusicCsv);
+-		for (const play of appleMusicPlays) {
+-			const artist = play.By;
+-			const streams = parseInt(play.Streams, 10);
++		for (const play of this.allPlays()) {
++			const artist = play.artist;
++			const streams = play.streams;
+ 			counts[artist] = (counts[artist] ?? 0) + streams;
+ 		}
+ 
+@@ -46,19 +42,9 @@ export class MyWrapped {
+ 
+ 		const counts: Record<string, number> = {};
+ 
+-		// ─── Spotify plays ──────────────────────────────────────────────────────
+-		const spotifyPlays: any[] = JSON.parse(this.spotifyJson);
+-		for (const play of spotifyPlays) {
+-			const genre = play.metadata.genre;
+-			const streams = play.play_count;
+-			counts[genre] = (counts[genre] ?? 0) + streams;
+-		}
+-
+-		// ─── Apple Music plays ──────────────────────────────────────────────────
+-		const appleMusicPlays: any[] = parseCSV(this.appleMusicCsv);
+-		for (const play of appleMusicPlays) {
+-			const genre = play.Style;
+-			const streams = parseInt(play.Streams, 10);
++		for (const play of this.allPlays()) {
++			const genre = play.genre;
++			const streams = play.streams;
+ 			counts[genre] = (counts[genre] ?? 0) + streams;
+ 		}
+ 

@@ -1,0 +1,32 @@
+commit 5c12974c9f12c9329f6e3149376394ca22627818
+Author: b <a@b>
+Date:   Mon Oct 5 15:43:20 2026 -0700
+
+    REFACTOR-0001: add the MusicSource target interface
+    
+    Comparing the Spotify and Apple Music loops, the platform's format is
+    the only thing that differs; what the reports do with a play is the
+    same. MusicRecord is the one shape a play should have, and MusicSource
+    is the one thing MyWrapped should need from a platform.
+    
+    Nothing uses them yet.
+
+diff --git a/src/MusicSource.ts b/src/MusicSource.ts
+new file mode 100644
+index 0000000..d2ba417
+--- /dev/null
++++ b/src/MusicSource.ts
+@@ -0,0 +1,13 @@
++/** One play, in the one shape MyWrapped understands. */
++export interface MusicRecord {
++	id: string;
++	track: string;
++	artist: string;
++	streams: number;
++	genre: string;
++}
++
++/** Any platform's plays, as MusicRecords. */
++export interface MusicSource {
++	getRecords(): MusicRecord[];
++}
