@@ -28,4 +28,4 @@ function runOrder(provider: PaymentProvider): void {
 
 // ─── Run both providers ───────────────────────────────────────────────────────
 runOrder("bank");
-runOrder("stripe");
+runOrder("bank2");

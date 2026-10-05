@@ -1,10 +1,16 @@
-/**
- * The coffee cart's original card reader.
- * Charges the connected bank card the given amount in cents.
- */
-export class BankCardReader {
-	/** Returns true if the card was approved, false if it was declined. Never throws. */
-	public charge(cents: number): boolean {
-		return Math.random() < 0.7;
+// BankCardReader implements PaymentGateway directly.
+// Already speaks cents — no unit conversion needed.
+
+import { PaymentGateway, PaymentResult } from "./payments";
+
+export class BankCardReader implements PaymentGateway {
+	readonly providerName = "Bank";
+	private static txCounter = 1;
+
+	pay(amountCents: number, _description: string): PaymentResult {
+		const approved = amountCents < 100_000;
+		return approved
+			? { success: true, transactionId: `bank-tx-${BankCardReader.txCounter++}` }
+			: { success: false, errorMessage: "Declined by bank" };
 	}
 }

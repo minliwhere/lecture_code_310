@@ -1,25 +1,25 @@
 import { BankCardReader } from "./bank";
-import { StripeClient } from "./stripe";
+import { Bank2Client } from "./otherBank";
 import { MENU, MenuItem } from "./menu";
 
 type OrderItem = { item: MenuItem; quantity: number; modifications: string[] };
 
-export type PaymentProvider = "bank" | "stripe";
+export type PaymentProvider = "bank" | "bank2";
 
 export class CoffeeCart {
 	private items: OrderItem[] = [];
 	private provider: PaymentProvider;
 
 	private bankReader?: BankCardReader;
-	private stripeClient?: StripeClient;
+	private bank2Client?: Bank2Client;
 
 	constructor(provider: PaymentProvider) {
 		this.provider = provider;
 
 		if (provider === "bank") {
 			this.bankReader = new BankCardReader();
-		} else if (provider === "stripe") {
-			this.stripeClient = new StripeClient();
+		} else if (provider === "bank2") {
+			this.bank2Client = new Bank2Client();
 		}
 	}
 
@@ -107,16 +107,16 @@ export class CoffeeCart {
 			} else {
 				return { success: false, message: "Declined by bank" };
 			}
-		} else if (this.provider === "stripe") {
-			// StripeClient speaks DOLLARS (not cents) — must convert
+		} else if (this.provider === "bank2") {
+			// Bank2Client speaks DOLLARS (not cents) — must convert
 			// It also needs a currency string and a description the bank portal can read
 			const amountDollars = total / 100;
-			const result = this.stripeClient!.createCharge(amountDollars, "CAD", description);
+			const result = this.bank2Client!.createCharge(amountDollars, "CAD", description);
 
 			if (result.status === "succeeded") {
-				return { success: true, message: "Processed via Stripe", transactionId: result.chargeId };
+				return { success: true, message: "Processed via Bank2", transactionId: result.chargeId };
 			} else {
-				return { success: false, message: `Stripe declined (network code: ${result.networkCode})` };
+				return { success: false, message: `Bank2 declined (network code: ${result.networkCode})` };
 			}
 		}
 

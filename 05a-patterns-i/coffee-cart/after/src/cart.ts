@@ -1,13 +1,16 @@
-import { PaymentAdapter, PaymentResult } from "./payments/PaymentAdapter";
+// CONTEXT — depends only on the PaymentGateway interface.
+// No provider-specific fields, no branches, no unit conversions.
+
+import { PaymentGateway, PaymentResult } from "./payments";
 import { MENU, MenuItem } from "./menu";
 
 type OrderItem = { item: MenuItem; quantity: number; modifications: string[] };
 
 export class CoffeeCart {
 	private items: OrderItem[] = [];
-	private payment: PaymentAdapter; // any adapter works here
+	private payment: PaymentGateway; // any PaymentGateway implementation works here
 
-	constructor(payment: PaymentAdapter) {
+	constructor(payment: PaymentGateway) {
 		this.payment = payment;
 	}
 
@@ -85,7 +88,7 @@ export class CoffeeCart {
 		if (this.items.length === 0) throw new Error("Cart is empty");
 		const total = this.getTotal();
 		const description = this.items.map((o) => `${o.item.name} x${o.quantity}`).join(", ");
-		// One call — no branching — every adapter speaks the same language.
-		return this.payment.charge(total, description);
+		// One call, no branching — every PaymentGateway speaks the same language.
+		return this.payment.pay(total, description);
 	}
 }
