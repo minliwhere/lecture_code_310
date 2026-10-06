@@ -1,40 +1,38 @@
-commit fcdc95d5a6193d5b4a6419bd9ccf105d6c856085
+commit 0ddf678273e8e32778b98312b55c2375d60e9c7b
 Author: b <a@b>
-Date:   Mon Oct 5 15:50:32 2026 -0700
+Date:   Mon Oct 5 20:12:00 2026 -0700
 
     FEAT-0001: add YouTube Music
     
-    YouTube Music exports XML, and calls a play a video: title, channel,
-    views, category. YouTubeMusicSource parses that export and adapts it to
-    MusicSource, and index.ts hands it to MyWrapped.
+    YouTube Music's SDK calls a play a watched video: listWatchedVideos()
+    returns videos with a title, channel, views, and category.
+    YouTubeMusicAdapter wraps a YouTubeMusicApi and translates those into
+    MusicRecords, and index.ts hands it to MyWrapped.
     
     MyWrapped didn't change: neither report needed a new loop.
 
 diff --git a/src/adapters.ts b/src/adapters.ts
-index ac8f38a..eb65862 100644
+index a5dce42..4abd91e 100644
 --- a/src/adapters.ts
 +++ b/src/adapters.ts
-@@ -1,5 +1,6 @@
+@@ -1,6 +1,7 @@
  import { MusicRecord, MusicSource } from "./MusicSource";
- import { parseCSV } from "./utils/csvParser";
-+import { parseXML } from "./utils/xmlParser";
+ import { SpotifyClient } from "./vendor/spotify";
+ import { AppleMusicLibrary } from "./vendor/appleMusic";
++import { YouTubeMusicApi } from "./vendor/youtubeMusic";
  
- export class SpotifySource implements MusicSource {
- 	private plays: any[];
-@@ -36,3 +37,21 @@ export class AppleMusicSource implements MusicSource {
+ export class SpotifyAdapter implements MusicSource {
+ 	constructor(private client: SpotifyClient) {}
+@@ -29,3 +30,17 @@ export class AppleMusicAdapter implements MusicSource {
  		}));
  	}
  }
 +
-+export class YouTubeMusicSource implements MusicSource {
-+	private videos: Record<string, string>[];
-+
-+	constructor(xml: string) {
-+		this.videos = parseXML(xml, "video");
-+	}
++export class YouTubeMusicAdapter implements MusicSource {
++	constructor(private client: YouTubeMusicApi) {}
 +
 +	getRecords(): MusicRecord[] {
-+		return this.videos.map((video) => ({
++		return this.client.listWatchedVideos().map((video) => ({
 +			id: video.videoId,
 +			track: video.title,
 +			artist: video.channel,
@@ -44,22 +42,21 @@ index ac8f38a..eb65862 100644
 +	}
 +}
 diff --git a/src/index.ts b/src/index.ts
-index 1937016..979d5c3 100644
+index 05fc90d..498a83c 100644
 --- a/src/index.ts
 +++ b/src/index.ts
-@@ -1,13 +1,14 @@
- import * as fs from "fs";
- import * as path from "path";
+@@ -1,11 +1,13 @@
  import { MyWrapped } from "./MyWrapped";
--import { SpotifySource, AppleMusicSource } from "./adapters";
-+import { SpotifySource, AppleMusicSource, YouTubeMusicSource } from "./adapters";
- 
- const read = (file: string) => fs.readFileSync(path.join(__dirname, "data", file), "utf-8");
+-import { SpotifyAdapter, AppleMusicAdapter } from "./adapters";
++import { SpotifyAdapter, AppleMusicAdapter, YouTubeMusicAdapter } from "./adapters";
+ import { SpotifyClient } from "./vendor/spotify";
+ import { AppleMusicLibrary } from "./vendor/appleMusic";
++import { YouTubeMusicApi } from "./vendor/youtubeMusic";
  
  const wrapped = new MyWrapped([
- 	new SpotifySource(read("spotify_plays.json")),
- 	new AppleMusicSource(read("apple_plays.csv")),
-+	new YouTubeMusicSource(read("youtube_plays.xml")),
+ 	new SpotifyAdapter(new SpotifyClient()),
+ 	new AppleMusicAdapter(new AppleMusicLibrary()),
++	new YouTubeMusicAdapter(new YouTubeMusicApi()),
  ]);
  wrapped.reportTopArtists();
  wrapped.reportTopGenres();

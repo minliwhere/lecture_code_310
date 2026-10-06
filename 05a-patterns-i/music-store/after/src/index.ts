@@ -1,13 +1,11 @@
-import * as fs from "fs";
-import * as path from "path";
 import { MyWrapped } from "./MyWrapped";
-import { SpotifySource, AppleMusicSource } from "./adapters";
-
-const read = (file: string) => fs.readFileSync(path.join(__dirname, "data", file), "utf-8");
+import { SpotifyAdapter, AppleMusicAdapter } from "./adapters";
+import { SpotifyClient } from "./vendor/spotify";
+import { AppleMusicLibrary } from "./vendor/appleMusic";
 
 const wrapped = new MyWrapped([
-	new SpotifySource(read("spotify_plays.json")),
-	new AppleMusicSource(read("apple_plays.csv")),
+	new SpotifyAdapter(new SpotifyClient()),
+	new AppleMusicAdapter(new AppleMusicLibrary()),
 ]);
 wrapped.reportTopArtists();
 wrapped.reportTopGenres();

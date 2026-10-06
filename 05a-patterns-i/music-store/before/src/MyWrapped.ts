@@ -1,9 +1,10 @@
-import { parseCSV } from "./utils/csvParser";
+import { SpotifyClient } from "./vendor/spotify";
+import { AppleMusicLibrary } from "./vendor/appleMusic";
 
 export class MyWrapped {
 	constructor(
-		private spotifyJson: string,
-		private appleMusicCsv: string
+		private spotify: SpotifyClient,
+		private appleMusic: AppleMusicLibrary
 	) {}
 
 	reportTopArtists(): void {
@@ -14,16 +15,14 @@ export class MyWrapped {
 		const counts: Record<string, number> = {};
 
 		// ─── Spotify plays ──────────────────────────────────────────────────────
-		const spotifyPlays: any[] = JSON.parse(this.spotifyJson);
-		for (const play of spotifyPlays) {
+		for (const play of this.spotify.getStreamHistory()) {
 			const artist = "Weird Al"; // TODO: fill in with the actual artist from the record!
 			const streams = play.play_count;
 			counts[artist] = (counts[artist] ?? 0) + streams;
 		}
 
 		// ─── Apple Music plays ──────────────────────────────────────────────────
-		const appleMusicPlays: any[] = parseCSV(this.appleMusicCsv);
-		for (const play of appleMusicPlays) {
+		for (const play of this.appleMusic.exportLibrary()) {
 			const artist = "Weird Al"; // TODO: fill in with the actual artist from the record!
 			const streams = parseInt(play.Streams, 10);
 			counts[artist] = (counts[artist] ?? 0) + streams;
@@ -47,16 +46,14 @@ export class MyWrapped {
 		const counts: Record<string, number> = {};
 
 		// ─── Spotify plays ──────────────────────────────────────────────────────
-		const spotifyPlays: any[] = JSON.parse(this.spotifyJson);
-		for (const play of spotifyPlays) {
+		for (const play of this.spotify.getStreamHistory()) {
 			const genre = "Unknown"; // TODO: fill in with the actual genre!
 			const streams = play.play_count;
 			counts[genre] = (counts[genre] ?? 0) + streams;
 		}
 
 		// ─── Apple Music plays ──────────────────────────────────────────────────
-		const appleMusicPlays: any[] = parseCSV(this.appleMusicCsv);
-		for (const play of appleMusicPlays) {
+		for (const play of this.appleMusic.exportLibrary()) {
 			const genre = "Unknown"; // TODO: fill in with the actual genre from the record!
 			const streams = parseInt(play.Streams, 10);
 			counts[genre] = (counts[genre] ?? 0) + streams;

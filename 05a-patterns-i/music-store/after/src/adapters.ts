@@ -1,15 +1,12 @@
 import { MusicRecord, MusicSource } from "./MusicSource";
-import { parseCSV } from "./utils/csvParser";
+import { SpotifyClient } from "./vendor/spotify";
+import { AppleMusicLibrary } from "./vendor/appleMusic";
 
-export class SpotifySource implements MusicSource {
-	private plays: any[];
-
-	constructor(json: string) {
-		this.plays = JSON.parse(json);
-	}
+export class SpotifyAdapter implements MusicSource {
+	constructor(private client: SpotifyClient) {}
 
 	getRecords(): MusicRecord[] {
-		return this.plays.map((play) => ({
+		return this.client.getStreamHistory().map((play) => ({
 			id: play.stream_id,
 			track: play.track,
 			artist: play.artist_name,
@@ -19,15 +16,11 @@ export class SpotifySource implements MusicSource {
 	}
 }
 
-export class AppleMusicSource implements MusicSource {
-	private plays: Record<string, string>[];
-
-	constructor(csv: string) {
-		this.plays = parseCSV(csv);
-	}
+export class AppleMusicAdapter implements MusicSource {
+	constructor(private client: AppleMusicLibrary) {}
 
 	getRecords(): MusicRecord[] {
-		return this.plays.map((play) => ({
+		return this.client.exportLibrary().map((play) => ({
 			id: play.ID,
 			track: play.Song,
 			artist: play.By,

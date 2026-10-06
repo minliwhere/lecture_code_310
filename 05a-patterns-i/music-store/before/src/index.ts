@@ -1,9 +1,7 @@
-import * as fs from "fs";
-import * as path from "path";
 import { MyWrapped } from "./MyWrapped";
+import { SpotifyClient } from "./vendor/spotify";
+import { AppleMusicLibrary } from "./vendor/appleMusic";
 
-const read = (file: string) => fs.readFileSync(path.join(__dirname, "data", file), "utf-8");
-
-const wrapped = new MyWrapped(read("spotify_plays.json"), read("apple_plays.csv"));
+const wrapped = new MyWrapped(new SpotifyClient(), new AppleMusicLibrary());
 wrapped.reportTopArtists();
 wrapped.reportTopGenres();
