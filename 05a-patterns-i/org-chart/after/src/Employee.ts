@@ -1,12 +1,6 @@
-/**
- * COMPONENT INTERFACE (Composite pattern)
- *
- * Both leaf nodes (Engineer, Designer, …) and composite nodes (Manager)
- * implement this interface. The client never needs to distinguish between them.
- */
+/** Anyone in the org chart: one person, or a manager along with everyone under them. */
 export interface Employee {
-  name: string;
-  traverse(depth: number): void;
-  getSalary(): number;
-  getHeadcount(): number;
+	traverse(depth: number): void;
+	getTotalSalary(): number;
+	getHeadcount(): number;
 }
