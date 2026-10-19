@@ -1,6 +1,10 @@
-Task: Write a function addIfAbsent() that:
+Task1: Write a function addIfAbsent() that:
 1. Adds a user to the store only if no user with the same id already exists.
 2. Returns true if the user was added successfully, false otherwise
+
+Task 2: Write a function updateEmail that:
+1. Takes a user id and an email
+2. Updates the user to use that email
 
 Then, Discuss:
 

@@ -1,16 +1,18 @@
 export interface User {
-	readonly id: string;
-	readonly name: string;
-	readonly email: string;
+	id: string;
+	name: string;
+	email: string;
 }
 
 export interface UserStore {
-	users: Map<string, User>;
+	/* list of users, sorted by email */
+	users: User[];
+	/* a boolean indicating if the last mutable operation succeeded */
 	lastOperationSucceeded: boolean;
 
 	/**
 	 * Adds a user to the store.
-	 * If a user with the same id already exists, the store is unchanged.
+	 * Assigns a random id to the user if successfully created, overriding the provided one.
 	 */
 	add(u: User): void;
 
