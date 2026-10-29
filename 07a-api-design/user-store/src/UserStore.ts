@@ -4,11 +4,14 @@ export interface User {
 	email: string;
 }
 
+
 export interface UserStore {
 	/* list of users, sorted by email */
-	users: User[];
+	// users: ArrayList<User>;
+	update(u: User, newfile);
+
 	/* a boolean indicating if the last mutable operation succeeded */
-	lastOperationSucceeded: boolean;
+	// lastOperationSucceeded: boolean;
 
 	/**
 	 * Adds a user to the store.
@@ -19,11 +22,13 @@ export interface UserStore {
 	/**
 	 * Returns the user with the given id, or null if not found.
 	 */
-	find(id: string): User | null;
+	find(idOrString: string, mode: "id" | "email"): User | null;
+
+	findByEmail(email: string): User | null;
 
 	/**
 	 * Deletes the user with the given id.
 	 * If no such user exists, the store is unchanged.
 	 */
-	delete(id: string): void;
+	delete(id: string): boolean;
 }
